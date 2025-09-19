@@ -331,6 +331,21 @@ export default function Profile() {
                 </div>
               ) : (
                 <>
+                  {/* Admin-specific quick actions */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="font-medium">Admin Actions</div>
+                      <div className="text-sm text-muted-foreground">
+                        Manage your admin session
+                      </div>
+                    </div>
+                    <Button variant="destructive" onClick={handleSignOut}>
+                      Sign Out (Admin)
+                    </Button>
+                  </div>
+
+                  <Separator />
+
                   <div className="space-y-2">
                     <div className="font-medium">Add New Song</div>
                     <div className="text-sm text-muted-foreground">
