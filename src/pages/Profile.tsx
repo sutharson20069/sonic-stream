@@ -10,6 +10,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
@@ -18,6 +19,9 @@ export default function Profile() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
   useEffect(() => {
     const theme = localStorage.getItem("theme");
@@ -60,9 +64,25 @@ export default function Profile() {
   const adminAddSong = useMutation(api.songs.adminAddSong);
 
   const handleBecomeAdmin = async () => {
+    setIsAdminDialogOpen(true);
+  };
+
+  // Confirm admin credentials and promote if valid
+  const handleConfirmAdmin = async () => {
+    const REQUIRED_USERNAME = "Xy7!vBq9@NzP3#rL";
+    const REQUIRED_PASSWORD = "J9v!Tx#4Lm@Qz8Rp$2Ws&Kd7Ub^Nx3Ce%Gy*Hf1Bo+Vm?Ai";
+
+    if (adminUsername !== REQUIRED_USERNAME || adminPassword !== REQUIRED_PASSWORD) {
+      toast.error("Invalid admin credentials");
+      return;
+    }
+
     try {
       await makeMeAdmin({});
       toast("You are now an admin");
+      setIsAdminDialogOpen(false);
+      setAdminUsername("");
+      setAdminPassword("");
     } catch (e: any) {
       toast.error(e?.message || "Failed to become admin");
     }
@@ -402,6 +422,43 @@ export default function Profile() {
                   </div>
                 </>
               )}
+
+              {/* Admin Authentication Dialog */}
+              <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Admin Authentication</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Admin Username</Label>
+                      <Input
+                        value={adminUsername}
+                        onChange={(e) => setAdminUsername(e.target.value)}
+                        placeholder="Enter admin username"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Admin Password</Label>
+                      <Input
+                        type="password"
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        placeholder="Enter admin password"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAdminDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleConfirmAdmin}>
+                      Confirm
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </motion.div>
