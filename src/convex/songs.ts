@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getCurrentUser } from "./users";
+import { Id } from "./_generated/dataModel";
 
 export const getAllSongs = query({
   args: {},
@@ -158,5 +159,55 @@ export const getRecentlyPlayed = query({
     );
     
     return songsWithDetails.filter(Boolean);
+  },
+});
+
+// Admin-only: Add a song by selecting an artist and optional album.
+export const adminAddSong = mutation({
+  args: {
+    title: v.string(),
+    artistId: v.id("artists"),
+    albumId: v.optional(v.id("albums")),
+    duration: v.number(),
+    coverImage: v.optional(v.string()),
+    genres: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "admin") {
+      throw new Error("Admin privileges required");
+    }
+
+    const songId = await ctx.db.insert("songs", {
+      title: args.title,
+      artistId: args.artistId as Id<"artists">,
+      albumId: args.albumId as Id<"albums"> | undefined,
+      duration: args.duration,
+      coverImage: args.coverImage,
+      genres: args.genres,
+      playCount: 0,
+    });
+
+    return songId;
+  },
+});
+
+// Helper queries to power the admin form
+export const getAllArtists = query({
+  args: {},
+  handler: async (ctx) => {
+    const artists = await ctx.db.query("artists").collect();
+    return artists;
+  },
+});
+
+export const getAlbumsByArtist = query({
+  args: { artistId: v.id("artists") },
+  handler: async (ctx, args) => {
+    const albums = await ctx.db
+      .query("albums")
+      .withIndex("by_artist", (q) => q.eq("artistId", args.artistId))
+      .collect();
+    return albums;
   },
 });
