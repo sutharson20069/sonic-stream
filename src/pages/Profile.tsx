@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 
 export default function Profile() {
   const { user, signOut } = useAuth();
@@ -60,8 +60,11 @@ export default function Profile() {
   const [songGenres, setSongGenres] = useState("");
   const [selectedArtist, setSelectedArtist] = useState<Id<"artists"> | "">("");
   const [selectedAlbum, setSelectedAlbum] = useState<Id<"albums"> | "">("");
+  const [audioFileId, setAudioFileId] = useState<Id<"_storage"> | null>(null);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
 
   const adminAddSong = useMutation(api.songs.adminAddSong);
+  const generateUploadUrl = useAction(api.files.generateUploadUrl);
 
   const handleBecomeAdmin = async () => {
     setIsAdminDialogOpen(true);
@@ -118,6 +121,7 @@ export default function Profile() {
         duration: Number(songDuration),
         coverImage: songCover.trim() || undefined,
         genres: genresArr,
+        audioFileId: audioFileId ?? undefined,
       });
       toast("Song added");
       setSongTitle("");
@@ -126,6 +130,7 @@ export default function Profile() {
       setSongGenres("");
       setSelectedArtist("");
       setSelectedAlbum("");
+      setAudioFileId(null);
     } catch (e: any) {
       toast.error(e?.message || "Failed to add song");
     }
@@ -390,6 +395,48 @@ export default function Profile() {
                         onChange={(e) => setSongGenres(e.target.value)}
                         placeholder="Synthwave, Electronic"
                       />
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>MP3 File (optional)</Label>
+                      <input
+                        type="file"
+                        accept="audio/mpeg"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.type !== "audio/mpeg") {
+                            toast.error("Please select an MP3 file");
+                            return;
+                          }
+                          try {
+                            setIsUploadingAudio(true);
+                            const uploadUrl = await generateUploadUrl({});
+                            const res = await fetch(uploadUrl, {
+                              method: "POST",
+                              headers: { "Content-Type": file.type },
+                              body: file,
+                            });
+                            if (!res.ok) throw new Error("Upload failed");
+                            const { storageId } = await res.json();
+                            setAudioFileId(storageId);
+                            toast("Audio uploaded");
+                          } catch (err: any) {
+                            toast.error(err?.message || "Failed to upload");
+                            setAudioFileId(null);
+                          } finally {
+                            setIsUploadingAudio(false);
+                          }
+                        }}
+                        className="w-full rounded-md border border-border bg-background p-2"
+                      />
+                      <div className="text-sm text-muted-foreground">
+                        {isUploadingAudio
+                          ? "Uploading..."
+                          : audioFileId
+                          ? "Audio attached"
+                          : "No audio uploaded"}
+                      </div>
                     </div>
                   </div>
 

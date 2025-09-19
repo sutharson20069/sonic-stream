@@ -61,6 +61,7 @@ const schema = defineSchema(
       genres: v.array(v.string()),
       trackNumber: v.optional(v.number()),
       playCount: v.optional(v.number()),
+      audioFileId: v.optional(v.id("_storage")),
     }).index("by_artist", ["artistId"])
      .index("by_album", ["albumId"])
      .index("by_title", ["title"]),
