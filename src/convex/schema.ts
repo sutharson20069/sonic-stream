@@ -32,12 +32,69 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
+    // Music streaming tables
+    artists: defineTable({
+      name: v.string(),
+      image: v.optional(v.string()),
+      bio: v.optional(v.string()),
+      genres: v.array(v.string()),
+      verified: v.optional(v.boolean()),
+    }).index("by_name", ["name"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    albums: defineTable({
+      title: v.string(),
+      artistId: v.id("artists"),
+      coverImage: v.optional(v.string()),
+      releaseDate: v.string(),
+      genres: v.array(v.string()),
+      totalTracks: v.number(),
+    }).index("by_artist", ["artistId"])
+     .index("by_release_date", ["releaseDate"]),
+
+    songs: defineTable({
+      title: v.string(),
+      artistId: v.id("artists"),
+      albumId: v.optional(v.id("albums")),
+      duration: v.number(), // in seconds
+      audioUrl: v.optional(v.string()),
+      coverImage: v.optional(v.string()),
+      genres: v.array(v.string()),
+      trackNumber: v.optional(v.number()),
+      playCount: v.optional(v.number()),
+    }).index("by_artist", ["artistId"])
+     .index("by_album", ["albumId"])
+     .index("by_title", ["title"]),
+
+    playlists: defineTable({
+      name: v.string(),
+      description: v.optional(v.string()),
+      userId: v.id("users"),
+      coverImage: v.optional(v.string()),
+      isPublic: v.boolean(),
+      songIds: v.array(v.id("songs")),
+    }).index("by_user", ["userId"])
+     .index("by_public", ["isPublic"]),
+
+    likedSongs: defineTable({
+      userId: v.id("users"),
+      songId: v.id("songs"),
+    }).index("by_user", ["userId"])
+     .index("by_song", ["songId"])
+     .index("by_user_and_song", ["userId", "songId"]),
+
+    playHistory: defineTable({
+      userId: v.id("users"),
+      songId: v.id("songs"),
+      playedAt: v.number(),
+    }).index("by_user", ["userId"])
+     .index("by_user_and_played_at", ["userId", "playedAt"]),
+
+    followedArtists: defineTable({
+      userId: v.id("users"),
+      artistId: v.id("artists"),
+    }).index("by_user", ["userId"])
+     .index("by_artist", ["artistId"])
+     .index("by_user_and_artist", ["userId", "artistId"]),
   },
   {
     schemaValidation: false,
