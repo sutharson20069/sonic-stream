@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
 import { ArrowRight, Headphones, Heart, Music, Play, Shuffle, Users } from "lucide-react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export default function Landing() {
   const { isAuthenticated } = useAuth();
@@ -99,6 +100,18 @@ export default function Landing() {
               >
                 <Shuffle className="mr-2 h-5 w-5" />
                 Explore Music
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => {
+                  toast("Connect Spotify in Integrations to enable Spotify search & 30s previews.");
+                  navigate("/app/search");
+                }}
+                className="border-green-400 text-white hover:bg-green-500 hover:text-white px-8 py-3 text-lg"
+              >
+                <Music className="mr-2 h-5 w-5" />
+                Connect Spotify
               </Button>
             </div>
           </motion.div>
