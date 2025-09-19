@@ -34,7 +34,8 @@ export const getCurrentUser = async (ctx: QueryCtx) => {
   return await ctx.db.get(userId);
 };
 
-// Promote the current user to admin. If there is already at least one admin, do nothing unless it's the same user.
+// Promote the current user to admin by transferring the role exclusively to them.
+// Any existing admins (other than the current user) will be demoted.
 export const makeMeAdmin = mutation({
   args: {},
   handler: async (ctx) => {
@@ -43,14 +44,15 @@ export const makeMeAdmin = mutation({
       throw new Error("Must be authenticated");
     }
 
-    // Check if an admin exists already
+    // Demote all other admins to "user" to ensure a single-admin policy
     const allUsers = await ctx.db.query("users").collect();
-    const existingAdmin = allUsers.find((u) => u.role === "admin");
-
-    if (existingAdmin && existingAdmin._id !== me._id) {
-      throw new Error("An admin already exists");
+    for (const u of allUsers) {
+      if (u.role === "admin" && u._id !== me._id) {
+        await ctx.db.patch(u._id, { role: "user" });
+      }
     }
 
+    // Ensure current user is admin
     await ctx.db.patch(me._id, { role: "admin" });
     return true;
   },
